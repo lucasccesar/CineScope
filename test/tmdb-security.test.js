@@ -62,7 +62,7 @@ test('Vercel function proxies TMDB requests with server-side credentials', async
         const vercelConfig = JSON.parse(fs.readFileSync(path.join(projectRoot, 'vercel.json'), 'utf8'));
         assert.deepEqual(vercelConfig.rewrites, [
             {
-                source: '/api/tmdb/:path*',
+                source: '/api/tmdb/:path+',
                 destination: '/api/tmdb?_tmdb_path=:path*',
             },
         ]);
