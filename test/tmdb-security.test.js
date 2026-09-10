@@ -69,14 +69,23 @@ test('Vercel function proxies TMDB requests with server-side credentials', async
 
         const functionUrl = pathToFileURL(path.join(projectRoot, 'api', 'tmdb.mjs')).href;
         const { default: handler } = await import(`${functionUrl}?test=${Date.now()}`);
-        const response = await handler(
-            new Request(
-                'https://cinescope.test/api/tmdb?_tmdb_path=trending%2Fmovie%2Fday&language=en-US',
-            ),
+        const response = {
+            headers: {},
+            setHeader(name, value) {
+                this.headers[name] = value;
+            },
+            end(body) {
+                this.body = body;
+            },
+        };
+
+        await handler(
+            { method: 'GET', url: '/api/tmdb?_tmdb_path=trending%2Fmovie%2Fday&language=en-US' },
+            response,
         );
 
-        assert.equal(response.status, 200);
-        assert.deepEqual(await response.json(), { results: [] });
+        assert.equal(response.statusCode, 200);
+        assert.deepEqual(JSON.parse(response.body.toString()), { results: [] });
         assert.equal(capturedRequest.url, 'https://api.themoviedb.org/3/trending/movie/day?language=en-US');
         assert.equal(capturedRequest.options.headers.Authorization, 'Bearer access-token-from-env');
     } finally {
