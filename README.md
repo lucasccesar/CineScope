@@ -45,7 +45,8 @@ public/
     ├── css/            # estilos
     └── js/             # scripts e cliente compartilhado
 server.js               # servidor estático e proxy TMDB
-api/tmdb/[...path].mjs  # proxy TMDB como Vercel Function
+api/tmdb.mjs            # proxy TMDB como Vercel Function
+vercel.json             # roteia /api/tmdb/* para a Function
 test/                   # testes automatizados
 ```
 

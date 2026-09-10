@@ -1,6 +1,6 @@
-import { createTmdbRequest } from '../../server.js';
+import { createTmdbRequest } from '../server.js';
 
-const TMDB_PROXY_PREFIX = '/api/tmdb';
+const TMDB_PATH_QUERY = '_tmdb_path';
 
 export default async function handler(request) {
     if (request.method !== 'GET') {
@@ -12,8 +12,15 @@ export default async function handler(request) {
 
     try {
         const requestUrl = new URL(request.url);
-        const requestPath = requestUrl.pathname.slice(TMDB_PROXY_PREFIX.length) || '/';
-        const { url, options } = createTmdbRequest(`${requestPath}${requestUrl.search}`, process.env);
+        const proxyPath = requestUrl.searchParams.get(TMDB_PATH_QUERY);
+        if (!proxyPath) {
+            throw new Error('TMDB request path is required');
+        }
+
+        requestUrl.searchParams.delete(TMDB_PATH_QUERY);
+        const requestPath = `/${proxyPath.replace(/^\/+/, '')}`;
+        const search = requestUrl.searchParams.toString();
+        const { url, options } = createTmdbRequest(`${requestPath}${search ? `?${search}` : ''}`, process.env);
         const tmdbResponse = await fetch(url, options);
         const body = await tmdbResponse.arrayBuffer();
 

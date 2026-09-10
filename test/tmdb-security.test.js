@@ -59,10 +59,20 @@ test('Vercel function proxies TMDB requests with server-side credentials', async
     };
 
     try {
-        const functionUrl = pathToFileURL(path.join(projectRoot, 'api', 'tmdb', '[...path].mjs')).href;
+        const vercelConfig = JSON.parse(fs.readFileSync(path.join(projectRoot, 'vercel.json'), 'utf8'));
+        assert.deepEqual(vercelConfig.rewrites, [
+            {
+                source: '/api/tmdb/:path*',
+                destination: '/api/tmdb?_tmdb_path=:path*',
+            },
+        ]);
+
+        const functionUrl = pathToFileURL(path.join(projectRoot, 'api', 'tmdb.mjs')).href;
         const { default: handler } = await import(`${functionUrl}?test=${Date.now()}`);
         const response = await handler(
-            new Request('https://cinescope.test/api/tmdb/trending/movie/day?language=en-US'),
+            new Request(
+                'https://cinescope.test/api/tmdb?_tmdb_path=trending%2Fmovie%2Fday&language=en-US',
+            ),
         );
 
         assert.equal(response.status, 200);
