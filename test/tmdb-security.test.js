@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
+const { pathToFileURL } = require('node:url');
 
 const projectRoot = path.resolve(__dirname, '..');
 const frontendFiles = [
@@ -41,6 +42,41 @@ test('TMDB proxy request can use the API key from the environment', () => {
 
     assert.equal(request.url, 'https://api.themoviedb.org/3/genre/movie/list?language=en&api_key=api-key-from-env');
     assert.equal(request.options.headers.Authorization, undefined);
+});
+
+test('Vercel function proxies TMDB requests with server-side credentials', async () => {
+    const previousToken = process.env.TMDB_ACCESS_TOKEN;
+    const previousFetch = globalThis.fetch;
+    let capturedRequest;
+
+    process.env.TMDB_ACCESS_TOKEN = 'access-token-from-env';
+    globalThis.fetch = async (url, options) => {
+        capturedRequest = { url, options };
+        return new Response(JSON.stringify({ results: [] }), {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+        });
+    };
+
+    try {
+        const functionUrl = pathToFileURL(path.join(projectRoot, 'api', 'tmdb', '[...path].mjs')).href;
+        const { default: handler } = await import(`${functionUrl}?test=${Date.now()}`);
+        const response = await handler(
+            new Request('https://cinescope.test/api/tmdb/trending/movie/day?language=en-US'),
+        );
+
+        assert.equal(response.status, 200);
+        assert.deepEqual(await response.json(), { results: [] });
+        assert.equal(capturedRequest.url, 'https://api.themoviedb.org/3/trending/movie/day?language=en-US');
+        assert.equal(capturedRequest.options.headers.Authorization, 'Bearer access-token-from-env');
+    } finally {
+        globalThis.fetch = previousFetch;
+        if (previousToken === undefined) {
+            delete process.env.TMDB_ACCESS_TOKEN;
+        } else {
+            process.env.TMDB_ACCESS_TOKEN = previousToken;
+        }
+    }
 });
 
 test('server serves the organized frontend structure from public', async (t) => {

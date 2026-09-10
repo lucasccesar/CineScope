@@ -4,7 +4,7 @@ Aplicação web para descobrir filmes e séries usando a API do The Movie Databa
 
 ## Requisitos
 
-- Node.js 22+
+- Node.js 24+
 - Um token de leitura ou uma API key do TMDB
 
 ## Configuração
@@ -45,10 +45,15 @@ public/
     ├── css/            # estilos
     └── js/             # scripts e cliente compartilhado
 server.js               # servidor estático e proxy TMDB
+api/tmdb/[...path].mjs  # proxy TMDB como Vercel Function
 test/                   # testes automatizados
 ```
 
 O frontend acessa o TMDB através de `/api/tmdb`. As credenciais ficam somente no servidor, carregadas por variáveis de ambiente.
+
+## Deploy na Vercel
+
+Configure `TMDB_ACCESS_TOKEN` nos ambientes Production e Preview. A pasta `api/` contém o proxy serverless usado pela Vercel; depois de alterar variáveis de ambiente, crie um novo deploy.
 
 ## Segurança
 
