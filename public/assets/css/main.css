@@ -484,9 +484,21 @@ input[type='search']::-webkit-search-cancel-button {
 .movieBackdrop {
     aspect-ratio: 1485 / 835;
     width: 43vw;
-    background-size: cover;
-    background-repeat: no-repeat;
+    overflow: hidden;
     border-radius: 10px;
+}
+
+.movieBackdrop img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: inherit;
+}
+
+.genres {
+    content-visibility: auto;
+    contain-intrinsic-size: 0 360px;
 }
 
 .movieInfo .title {

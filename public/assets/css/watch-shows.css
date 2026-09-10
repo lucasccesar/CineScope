@@ -4,8 +4,8 @@
     font-family: 'Roboto Condensed', sans-serif;
     box-sizing: border-box;
     font-size: 62.5%;
-    color: white;
     text-decoration: none;
+    scroll-behavior: smooth;
 }
 
 body {
@@ -195,7 +195,7 @@ main {
     position: relative;
     display: flex;
     flex-direction: column;
-    z-index: 2;
+    z-index: 1;
     gap: 1vw;
 }
 
@@ -239,12 +239,14 @@ main {
     padding: 1.3vw;
     font-weight: bold;
     backdrop-filter: blur(10px);
+    color: white;
 }
 
 #telas {
-    margin-top: 10px;
+    margin-top: 10px !important;
     display: flex;
     gap: 1vw;
+    color: white;
 }
 
 #play {
@@ -253,6 +255,10 @@ main {
     border: none;
     background-color: #38a935;
     /* height: 30px; */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
 }
 
 #play:hover {
@@ -290,10 +296,140 @@ main {
 .titulo {
     color: darkgray;
     font-size: calc(0.3rem + 1vw);
+    text-align: center;
 }
 
 .hidden {
     visibility: hidden;
+}
+
+.anchor {
+    display: block;
+    height: 240px; /*same height as header*/
+    margin-top: -240px; /*same height as header*/
+    visibility: hidden;
+}
+
+#seasons {
+    background-color: #05151e;
+    color: #404d53;
+    border: none;
+    text-transform: uppercase;
+    font-weight: bold;
+    font-size: calc(0.9rem + 2vw);
+    cursor: pointer;
+    margin-bottom: 1.5vw !important;
+}
+
+#seasons option {
+    color: #404d53;
+    border: none;
+    text-transform: uppercase;
+    font-weight: bold;
+    font-size: calc(1.5rem + 0.5vw);
+    max-width: min-content;
+}
+
+#btnEp {
+    display: flex;
+}
+
+#btnEp button {
+    display: none;
+    width: 2vw;
+    background-color: rgba(255, 255, 255, 0);
+    border: none;
+    padding: 0;
+}
+
+#btnEp button span {
+    font-size: calc(2rem + 3vw);
+}
+
+#btnEp button .material-symbols-rounded {
+    font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+#anterior {
+    visibility: hidden;
+}
+
+#anterior span {
+    rotate: 180deg;
+    width: 2vw;
+}
+
+#episodesWrapper {
+    padding-left: 5%;
+    overflow-x: scroll;
+    padding-bottom: 3vw;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+#episodesWrapper::-webkit-scrollbar {
+    display: none;
+}
+
+#episodes {
+    display: flex;
+    flex-flow: row nowrap;
+    gap: 2vw;
+    transition: 700ms;
+    width: fit-content;
+}
+
+.episode {
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    width: min-content;
+}
+
+.episodeImg {
+    aspect-ratio: 1556 / 875;
+    min-width: 43.5vw;
+    min-height: 24.5vw;
+    width: 43.5vw;
+    height: 24.5vw;
+    display: block;
+    object-fit: cover;
+    border-radius: 10px 10px 0 0;
+    transition: 300ms;
+}
+
+.episodeInfo {
+    width: 100%;
+    height: 100%;
+    min-height: 8vw;
+    box-sizing: border-box;
+    background-color: #040f16;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    gap: 3vw;
+    border-radius: 0 0 10px 10px;
+    color: white;
+}
+
+.episodeInfoClass {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    align-items: center;
+}
+
+.episodeInfoClass p {
+    font-size: calc(0.3rem + 2vw);
+}
+
+#playEp {
+    font-size: calc(1.3rem + 2vw);
+}
+
+.epNum {
+    max-width: 70%;
 }
 
 .mainDiv {
@@ -304,11 +440,12 @@ main {
     color: #404d53;
     font-weight: bold;
     font-size: calc(0.9rem + 2vw);
-    margin-bottom: 1.5vw;
+    margin-bottom: 1.5vw !important;
 }
 
 #description {
     font-size: calc(0.3rem + 2vw);
+    color: white;
 }
 
 #diretores,
@@ -316,8 +453,9 @@ main {
 #generos,
 #telas,
 .description,
-#description {
-    padding: 0% 5%;
+#description,
+#seasons {
+    margin: 0% 5%;
 }
 
 #cast {
@@ -338,22 +476,21 @@ main {
 .face {
     width: 25vw;
     height: 25vw;
-    background-size: cover;
-    background-repeat: no-repeat;
-    background-position-y: -10px;
+    display: block;
+    object-fit: cover;
     border-radius: 100%;
 }
 
 .character {
-    color: gray;
+    color: gray !important;
     font-size: calc(0.7rem + 2vw);
 }
 
 .guest {
     width: 100px;
     height: 100px;
-    background-size: cover;
-    background-repeat: no-repeat;
+    display: block;
+    object-fit: cover;
     border-radius: 100%;
 }
 
@@ -369,6 +506,7 @@ main {
 
 .actor p {
     font-size: calc(0.3rem + 2vw);
+    color: white;
 }
 
 #similarMovies {
@@ -391,6 +529,8 @@ main {
     width: 40vw;
     height: 60vw;
     cursor: pointer;
+    display: block;
+    object-fit: cover;
 }
 
 .movie-info {
@@ -398,6 +538,10 @@ main {
     align-items: center;
     justify-content: space-evenly;
     height: 82px;
+}
+
+.movie-info h3 {
+    font-size: calc(0.8rem + 2vw);
 }
 
 .movie {
@@ -506,14 +650,14 @@ div.movie:last-child {
     }
 
     main {
-        width: 80%;
+        width: 80vw;
         height: 0;
         margin: auto;
         position: relative;
         display: flex;
         flex-direction: column;
         gap: 10px;
-        z-index: 2;
+        z-index: 1;
     }
 
     .top200 {
@@ -524,9 +668,15 @@ div.movie:last-child {
     #nome,
     #generos,
     #telas,
+    #seasons,
     .description,
     #description {
         padding: 0%;
+        margin: 0%;
+    }
+
+    #diretores {
+        gap: 1vw;
     }
 
     #diretores p {
@@ -570,9 +720,95 @@ div.movie:last-child {
         font-size: calc(0.6rem + 1.2vw) !important;
     }
 
-    .description {
+    #seasons {
         font-size: calc(1rem + 0.5vw);
-        margin: 0;
+        margin: 0 !important;
+        width: fit-content;
+    }
+
+    #seasons option {
+        font-size: calc(1rem + 0.5vw);
+    }
+
+    #btnEp {
+        width: 100vw;
+        transform: translateX(-2vw);
+        transform: translateX(-10vw);
+    }
+
+    #btnEp button {
+        display: block;
+        position: absolute;
+        width: 8.5vw;
+        height: 100%;
+        z-index: 2;
+    }
+
+    #anterior {
+        left: 0;
+        border-radius: 0 10px 10px 0;
+    }
+
+    #anterior span {
+        rotate: 180deg;
+        width: auto;
+    }
+
+    #avancar {
+        right: 0;
+        border-radius: 10px 0 0 10px;
+    }
+
+    .hidden {
+        background-color: rgba(0, 0, 0, 0) !important;
+        color: #ffffff00 !important;
+        transition: 200ms;
+        visibility: hidden;
+    }
+
+    .visible {
+        background-color: rgba(0, 0, 0, 0.5) !important;
+        color: #ffffff !important;
+        transition: 200ms;
+        cursor: pointer;
+        visibility: visible !important;
+    }
+
+    #episodesWrapper {
+        width: 100vw;
+        overflow: hidden;
+        padding: 0;
+    }
+
+    #episodes {
+        gap: 1.5vw;
+        margin-left: 10vw;
+    }
+
+    .episodeImg {
+        width: 18.875vw;
+        height: 11vw;
+        min-width: 18.875vw;
+        min-height: 11vw;
+    }
+
+    .episodeInfo {
+        padding: 0.5vw;
+        gap: 0.5vw;
+        min-height: fit-content;
+    }
+
+    #playEp {
+        font-size: calc(1.2rem + 1.5vw);
+    }
+
+    .episodeInfoClass p {
+        font-size: calc(0.8rem + 0.4vw);
+    }
+
+    .description {
+        font-size: calc(1rem + 0.5vw) !important;
+        margin: 0 !important;
     }
 
     #description {

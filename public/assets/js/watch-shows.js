@@ -1,12 +1,4 @@
 const bgImg = document.getElementById('bgImg');
-const imgUrl = 'https://image.tmdb.org/t/p/original';
-const options = {
-    method: 'GET',
-    headers: {
-        accept: 'application/json',
-        Authorization: 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI1OWZhMWRmMzYyYWJhNmUwODU3NDQwOTUxOThjMjQwMiIsInN1YiI6IjY0ZWJhOTA3YzYxM2NlMDBlYWE5YWUzOCIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.H_LhjbrrBxrFa4FEiXXPt4VPn6xDyzvdtiZJ28820uk',
-    },
-};
 const urlParams = new URLSearchParams(window.location.search);
 const movieId = urlParams.get('id');
 var diretores = [];
@@ -78,7 +70,7 @@ search.addEventListener('click', (event) => {
 });
 
 async function main() {
-    var info = await fetch(`https://api.themoviedb.org/3/tv/${movieId}?language=en-US`, options).then((response) => response.json());
+    var info = await fetch(`${TMDB_API_URL}/tv/${movieId}?language=en-US`, options).then((response) => response.json());
     if (info.seasons[0].name == 'Specials') {
         var seasonsNum = info.seasons.length - 1;
     } else {
@@ -90,10 +82,13 @@ async function main() {
 
     window.top.document.title = 'Watch ' + info.name;
 
-    var img = await fetch(`https://api.themoviedb.org/3/tv/${movieId}/images`, options).then((response) => response.json());
+    const [img, creditsA] = await Promise.all([
+        fetch(`${TMDB_API_URL}/tv/${movieId}/images`, options).then((response) => response.json()),
+        fetch(`${TMDB_API_URL}/tv/${movieId}/aggregate_credits?language=en-US`, options).then((response) => response.json()),
+    ]);
 
     var foto = img.backdrops[0].file_path;
-    var fotoLink = imgUrl + foto;
+    var fotoLink = DETAIL_IMG_URL + foto;
     bgImg.style.backgroundImage = `-webkit-linear-gradient(bottom, rgba(5, 21, 30, 1) 0%, rgba(0, 0, 0, 0) 30%), url('${fotoLink}')`;
 
     if (info.seasons[0].name == 'Specials') {
@@ -112,8 +107,7 @@ async function main() {
         }
     }
 
-    /* var credits = await fetch(`https://api.themoviedb.org/3/tv/${movieId}/credits?language=en-US`, options).then((response) => response.json()); */
-    var creditsA = await fetch(`https://api.themoviedb.org/3/tv/${movieId}/aggregate_credits?language=en-US`, options).then((response) => response.json());
+    /* var credits = await fetch(`${TMDB_API_URL}/tv/${movieId}/credits?language=en-US`, options).then((response) => response.json()); */
     var creditsCast = creditsA.cast;
     var creditsCrew = creditsA.crew;
     creditsCast.sort((a, b) => Number(b.total_episode_count) - Number(a.total_episode_count));
@@ -158,13 +152,15 @@ async function main() {
             actor.classList.add('actor');
             actor.dataset.id = e.id;
 
-            var face = document.createElement('div');
+            var face = document.createElement('img');
             face.classList.add('face');
+            face.loading = 'lazy';
+            face.decoding = 'async';
+            face.alt = e.name;
             if (e.profile_path != null) {
-                var faceImg = imgUrl + e.profile_path;
-                face.style.backgroundImage = `url("${faceImg}")`;
+                face.src = PROFILE_IMG_URL + e.profile_path;
             } else {
-                face.style.backgroundImage = `url("https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcRkmcrd-1DlsghkUmszTsMtJtjTj2avxELvWWjDfbIrqboIQMdL")`;
+                face.src = 'https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcRkmcrd-1DlsghkUmszTsMtJtjTj2avxELvWWjDfbIrqboIQMdL';
                 face.classList.replace('face', 'guest');
             }
 
@@ -184,18 +180,14 @@ async function main() {
         }
     });
 
-    let k = 0;
-    for (let h = 1; h < 6; h++) {
-        similar = await fetch(`https://api.themoviedb.org/3/tv/${movieId}/similar?language=en-US&page=${h}`, options)
-            .then((res) => res.json())
-            .then((data) => {
-                return data.results;
-            });
-        for (let i = 0; i < 20; i++) {
-            similarFull[k + i] = similar[i];
-        }
-        k += 20;
-    }
+    const similarPages = await Promise.all(
+        Array.from({ length: 5 }, (_, index) =>
+            fetch(`${TMDB_API_URL}/tv/${movieId}/similar?language=en-US&page=${index + 1}`, options)
+                .then((res) => res.json())
+                .then((data) => data.results),
+        ),
+    );
+    similarFull = similarPages.flat();
 
     similarFull.sort((a, b) => Number(b.vote_count) - Number(a.vote_count));
 
@@ -213,20 +205,15 @@ async function main() {
         movieEl.classList.add('movie');
         movieEl.classList.add('gradient-border');
         movieEl.id = `${id}`;
-        movieEl.innerHTML = `
-        
-        <div id="img${id}" class="imagem"></div>
-        `;
+        movieEl.innerHTML = createLazyImageMarkup(POSTER_IMG_URL + poster_path, '', 'imagem');
 
         similarMovies.appendChild(movieEl);
 
-        var imgId = document.getElementById(`img${id}`);
-        imgId.style.backgroundImage = `url("${imgUrl + poster_path}")`;
-        imgId.style.backgroundSize = `cover`;
+        var imgId = movieEl.querySelector('.imagem');
         imgId.addEventListener('click', abrirSimilar);
     });
 
-    var actorMovies = await fetch('https://api.themoviedb.org/3/person/59410/movie_credits?language=en-US', options).then((response) => response.json());
+    var actorMovies = await fetch(`${TMDB_API_URL}/person/59410/movie_credits?language=en-US`, options).then((response) => response.json());
     var actorMoviesActing = [...actorMovies.cast];
     actorMoviesActing = actorMoviesActing.filter((object) => {
         return object.backdrop_path != null;
@@ -239,7 +226,7 @@ async function main() {
     });
     actorMoviesJob.sort((a, b) => Number(b.vote_count) - Number(a.vote_count));
 
-    var actorShows = await fetch('https://api.themoviedb.org/3/person/59410/tv_credits?language=en-US', options).then((response) => response.json());
+    var actorShows = await fetch(`${TMDB_API_URL}/person/59410/tv_credits?language=en-US`, options).then((response) => response.json());
     var actorShowsActing = [...actorShows.cast];
     actorShowsActing = actorShowsActing.filter((object) => {
         return object.backdrop_path != null;
@@ -259,22 +246,32 @@ async function seasonFunc() {
     current = 0;
     episodes.innerHTML = '';
     episodes.style.transform = `translateX(0vw)`;
-    var seasonInfo = await fetch(`https://api.themoviedb.org/3/tv/${movieId}/season/${seasons.value == '' ? 1 : seasons.value}?language=en-US`, options).then((response) => response.json());
+    var seasonInfo = await fetch(`${TMDB_API_URL}/tv/${movieId}/season/${seasons.value == '' ? 1 : seasons.value}?language=en-US`, options).then((response) => response.json());
     episodesCount = seasonInfo.episodes.length;
     divCount = Math.ceil(episodesCount / 4);
     divCountFloat = episodesCount / 4;
-    var count = 0;
+    const episodeInfos = await Promise.all(
+        Array.from({ length: episodesCount }, (_, index) =>
+            fetch(`${TMDB_API_URL}/tv/${movieId}/season/${seasons.value == '' ? 1 : seasons.value}/episode/${index + 1}?language=en-US`, options)
+                .then((response) => response.json()),
+        ),
+    );
     for (let i = 0; i < episodesCount; i++) {
-        var episodeInfo = await fetch(`https://api.themoviedb.org/3/tv/${movieId}/season/${seasons.value == '' ? 1 : seasons.value}/episode/${i + 1}?language=en-US`, options).then((response) => response.json());
+        const episodeInfo = episodeInfos[i];
         let divEp = document.createElement('div');
         divEp.id = `${i + 1}`;
         divEp.addEventListener('mouseenter', hover);
         divEp.addEventListener('mouseleave', leave);
         /* divEp.addEventListener('click', abrir); */
         divEp.classList.add('episode');
-        let divImg = document.createElement('div');
+        let divImg = document.createElement('img');
         let divInfo = document.createElement('div');
-        divImg.style.backgroundImage = `url('${imgUrl + episodeInfo.still_path}')`;
+        divImg.loading = 'lazy';
+        divImg.decoding = 'async';
+        divImg.alt = '';
+        if (episodeInfo.still_path) {
+            divImg.src = EPISODE_IMG_URL + episodeInfo.still_path;
+        }
         divImg.classList.add('episodeImg');
         if(window.getComputedStyle(document.querySelector('#btnEp button')).getPropertyValue('display') != 'none'){
             divImg.style.filter = 'grayscale(70%)';
@@ -336,7 +333,7 @@ function getColor(vote) {
 
 function abrirSimilar(event) {
     var similarMovieId = event.target.offsetParent.id;
-    site = 'watchShows.html?id=' + similarMovieId;
+    site = '/pages/watch-shows.html?id=' + similarMovieId;
     window.location.href = site;
 }
 

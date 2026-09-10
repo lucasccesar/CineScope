@@ -1,14 +1,3 @@
-const options = {
-    method: 'GET',
-    headers: {
-        accept: 'application/json',
-        Authorization: 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI1OWZhMWRmMzYyYWJhNmUwODU3NDQwOTUxOThjMjQwMiIsInN1YiI6IjY0ZWJhOTA3YzYxM2NlMDBlYWE5YWUzOCIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.H_LhjbrrBxrFa4FEiXXPt4VPn6xDyzvdtiZJ28820uk',
-    },
-};
-const API_KEY = 'api_key=59fa1df362aba6e085744095198c2402';
-const BASE_URL = 'https://api.themoviedb.org/3';
-const API_URL = BASE_URL + '/discover/tv?sort_by=popularity.desc&' + API_KEY;
-const IMG_URL = 'https://image.tmdb.org/t/p/original';
 const upper = document.getElementById('upper');
 const movies = document.getElementById('movies');
 const lower = document.getElementById('lower');
@@ -48,12 +37,14 @@ search.addEventListener('click', (event) => {
 });
 
 async function main() {
-    var discover = await fetch(`https://api.themoviedb.org/3/trending/tv/day?language=en-US`, options).then((response) => response.json());
-    var trendingObj = await fetch(`https://api.themoviedb.org/3/trending/tv/day?language=en-US`, options).then((response) => response.json());
-    var trendingResults = trendingObj.results;
-    var discoverOrder = discover.results.sort((a, b) => Number(b.vote_count) - Number(a.vote_count));
-    var genresObject = await fetch('https://api.themoviedb.org/3/genre/tv/list?language=en', options).then((response) => response.json());
+    const [discover, genresObject] = await Promise.all([
+        fetch(`${TMDB_API_URL}/trending/movie/day?language=en-US`, options).then((response) => response.json()),
+        fetch(`${TMDB_API_URL}/genre/movie/list?language=en`, options).then((response) => response.json()),
+    ]);
+    var trendingResults = discover.results;
+    var discoverOrder = [...discover.results].sort((a, b) => Number(b.vote_count) - Number(a.vote_count));
     var genresObjectResults = genresObject.genres;
+    genresObjectResults.splice(1, 1);
 
     for (let i = discoverOrder.length; i > 4; i--) {
         discoverOrder.pop();
@@ -64,18 +55,18 @@ async function main() {
         fundo.classList.add('fundo');
         let filme = document.createElement('div');
         filme.classList.add('filme');
-        filme.style.backgroundImage = `-webkit-linear-gradient(bottom, rgb(5, 21, 30) 0%, rgba(0, 0, 0, 0) 30%) ,url(${IMG_URL + movie.backdrop_path})`;
+        filme.style.backgroundImage = `-webkit-linear-gradient(bottom, rgb(5, 21, 30) 0%, rgba(0, 0, 0, 0) 30%) ,url(${HERO_IMG_URL + movie.backdrop_path})`;
         filme.innerHTML = `
         <div class='info'>
             <div class='infoInner'>
-                <p class="title">${movie.name}</p>
+                <p class="title">${movie.title}</p>
                 <p class="description">${movie.overview}</p>
                 <button class="btnWatch" data-id="${movie.id}"><span class="material-symbols-rounded" id="play_arrow">play_arrow</span>Watch Movie</button>
             </div>
         </div>
         <div class='infoMobile'>
             <div class='infoInner'>
-                <p class="title">${movie.name}</p>
+                <p class="title">${movie.original_title}</p>
                 <button class="btnWatch" data-id="${movie.id}" data-type="${movie.media_type}"><span class="material-symbols-rounded" id="play_arrow">play_arrow</span></button>
             </div>
         </div>
@@ -88,18 +79,18 @@ async function main() {
             fundo.classList.add('fundo');
             let filme = document.createElement('div');
             filme.classList.add('filme');
-            filme.style.backgroundImage = `-webkit-linear-gradient(bottom, rgb(5, 21, 30) 0%, rgba(0, 0, 0, 0) 30%) ,url(${IMG_URL + discoverOrder[0].backdrop_path})`;
+            filme.style.backgroundImage = `-webkit-linear-gradient(bottom, rgb(5, 21, 30) 0%, rgba(0, 0, 0, 0) 30%) ,url(${HERO_IMG_URL + discoverOrder[0].backdrop_path})`;
             filme.innerHTML = `
             <div class='info'>
                 <div class='infoInner'>
-                    <p class="title">${discoverOrder[0].name}</p>
+                    <p class="title">${discoverOrder[0].title}</p>
                     <p class="description">${discoverOrder[0].overview}</p>
                     <button class="btnWatch" data-id="${movie.id}"><span class="material-symbols-rounded" id="play_arrow">play_arrow</span>Watch Movie</button>
                 </div>
             </div>
             <div class='infoMobile'>
                 <div class='infoInner'>
-                    <p class="title">${movie.name}</p>
+                    <p class="title">${movie.original_title}</p>
                     <button class="btnWatch" data-id="${movie.id}" data-type="${movie.media_type}"><span class="material-symbols-rounded" id="play_arrow">play_arrow</span></button>
                 </div>
             </div>
@@ -119,7 +110,7 @@ async function main() {
         divMovies.dataset.id = `${trendingResults[i].id}`;
         divMovies.dataset.type = trendingResults[i].media_type;
         let movieImgCount = 0;
-        let movieImg = await fetch(`https://api.themoviedb.org/3/${trendingResults[i].media_type}/${trendingResults[i].id}/images`, options).then((response) => response.json());
+        let movieImg = await fetch(`${TMDB_API_URL}/${trendingResults[i].media_type}/${trendingResults[i].id}/images`, options).then((response) => response.json());
         for (let i = 0; i < movieImg.backdrops.length; i++) {
             if (movieImg.backdrops[i].iso_639_1 == 'en' && movieImgCount == 0 && movieImg.backdrops.length > 0) {
                 movieImgCount = 1;
@@ -130,7 +121,7 @@ async function main() {
             movieImgPath = movieImg.backdrops[0].file_path;
         }
         divMovies.innerHTML = `
-                <div class="movieBackdrop" style="background-image: url('${IMG_URL + movieImgPath}')"></div>
+                <div class="movieBackdrop">${createLazyImageMarkup(IMG_URL + movieImgPath)}</div>
                 <div class="movieInfo"><p class="title">${
                     trendingResults[i].title != undefined ? trendingResults[i].title : trendingResults[i].name
                 }</p><svg xmlns="http://www.w3.org/2000/svg" height="2rem" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><style>svg{fill:#ffffff}</style><path d="M438.6 278.6c12.5-12.5 12.5-32.8 0-45.3l-160-160c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L338.8 224 32 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l306.7 0L233.4 393.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l160-160z"/></svg></div>
@@ -146,11 +137,11 @@ async function main() {
         <div class="genresUpper">
         <div class="genreDiv">
             <div class="genreAbsolute" data-genre-id="${genresObject.genres[key].id}" data-genre-name="${genresObject.genres[key].name}"></div>
-            <div class="centerText">
-                <p>${genresObjectResults[key].name}</p>
-                <svg xmlns="http://www.w3.org/2000/svg" height="24" width="24"><path d="M6.75 21.5q-.525-.525-.525-1.288 0-.762.525-1.287L13.675 12l-6.95-6.95q-.525-.525-.537-1.275-.013-.75.537-1.3.525-.525 1.287-.525.763 0 1.288.525l8.425 8.425q.225.225.337.512.113.288.113.588t-.113.587q-.112.288-.337.513L9.3 21.525q-.525.525-1.262.525-.738 0-1.288-.55Z" /></svg>  
-            </div>
-            <div class="genreBar"></div>
+                <div class="centerText">
+                        <p>${genresObjectResults[key].name}</p>
+                        <svg xmlns="http://www.w3.org/2000/svg" height="24" width="24"><path d="M6.75 21.5q-.525-.525-.525-1.288 0-.762.525-1.287L13.675 12l-6.95-6.95q-.525-.525-.537-1.275-.013-.75.537-1.3.525-.525 1.287-.525.763 0 1.288.525l8.425 8.425q.225.225.337.512.113.288.113.588t-.113.587q-.112.288-.337.513L9.3 21.525q-.525.525-1.262.525-.738 0-1.288-.55Z" /></svg>  
+                </div>
+                <div class="genreBar"></div>
             </div>
             <div class="pageCount">
                 <div class="pageCounts selecionada"></div>
@@ -161,7 +152,7 @@ async function main() {
             </div>
             <div class="scrollPositionWrapper">
                 <div class="scrollPosition"></div>
-            </div> 
+            </div>
         </div>
         <div class="genresLower">
             <button class="pass previous hidden"><span class="material-symbols-rounded" style="font-size: 70px"> arrow_back_ios </span></button>
@@ -252,12 +243,12 @@ function onTouchEnd(event) {
 function openGenre(event) {
     let genreId = event.target.dataset.genreId;
     let genreName = event.target.dataset.genreName;
-    site = 'movieGenre.html?id=' + genreId + '&type=tv' + '&genre=' + genreName;
+    site = '/pages/movie-genre.html?id=' + genreId + '&type=movie' + '&genre=' + genreName;
     window.location.href = site;
 }
 
 async function showMovies(genre, index, element, genreId, type) {
-    let results = await fetch(`https://api.themoviedb.org/3/discover/tv?sort_by=vote_count.desc&with_genres=${genreId}`, options)
+    let results = await fetch(`${TMDB_API_URL}/discover/movie?sort_by=vote_count.desc&with_genres=${genreId}`, options)
         .then((response) => response.json())
         .then((response) => response.results);
 
@@ -268,9 +259,9 @@ async function showMovies(genre, index, element, genreId, type) {
         divMovies.classList.add('movie');
         divMovies.addEventListener('click', openR);
         divMovies.dataset.id = `${results[i].id}`;
-        divMovies.dataset.type = 'movie';
+        divMovies.dataset.type = "movie";
         let movieImgCount = 0;
-        let movieImg = await fetch(`https://api.themoviedb.org/3/tv/${results[i].id}/images`, options).then((response) => response.json());
+        let movieImg = await fetch(`${TMDB_API_URL}/movie/${results[i].id}/images`, options).then((response) => response.json());
         for (let i = 0; i < movieImg.backdrops.length; i++) {
             if (movieImg.backdrops[i].iso_639_1 == 'en' && movieImgCount == 0 && movieImg.backdrops.length > 0) {
                 movieImgCount = 1;
@@ -281,7 +272,7 @@ async function showMovies(genre, index, element, genreId, type) {
             movieImgPath = movieImg.backdrops[0].file_path;
         }
         divMovies.innerHTML = `
-                <div class="movieBackdrop" style="background-image: url('${IMG_URL + movieImgPath}')"></div>
+                <div class="movieBackdrop">${createLazyImageMarkup(IMG_URL + movieImgPath)}</div>
                 <div class="movieInfo"><p class="title">${
                     results[i].title != undefined ? results[i].title : results[i].name
                 }</p><svg xmlns="http://www.w3.org/2000/svg" height="2rem" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><style>svg{fill:#ffffff}</style><path d="M438.6 278.6c12.5-12.5 12.5-32.8 0-45.3l-160-160c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L338.8 224 32 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l306.7 0L233.4 393.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l160-160z"/></svg></div>
@@ -344,11 +335,11 @@ function hoverLeave(event) {
 function openR(event) {
     if (event.target.dataset.id != undefined) {
         movieId = event.target.dataset.id;
-        site = 'watchShows.html?id=' + movieId;
+        site = '/pages/watch-movies.html?id=' + movieId;
         window.location.href = site;
     } else {
         movieId = event.target.parentElement.dataset.id;
-        site = 'watchShows.html?id=' + movieId;
+        site = '/pages/watch-movies.html?id=' + movieId;
         window.location.href = site;
     }
 }
@@ -378,7 +369,7 @@ function constant() {
     loading.style.width = `${ms / 15}%`;
     if (ms / 15 == 100) {
         ms = 0;
-        if (window.getComputedStyle(document.getElementById('suggestions')).getPropertyValue('display') != 'none') {
+        if(window.getComputedStyle(document.getElementById('suggestions')).getPropertyValue('display') != 'none'){
             trocar();
         }
     }

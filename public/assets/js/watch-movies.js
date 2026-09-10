@@ -1,12 +1,4 @@
 const bgImg = document.getElementById('bgImg');
-const imgUrl = 'https://image.tmdb.org/t/p/original';
-const options = {
-    method: 'GET',
-    headers: {
-        accept: 'application/json',
-        Authorization: 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI1OWZhMWRmMzYyYWJhNmUwODU3NDQwOTUxOThjMjQwMiIsInN1YiI6IjY0ZWJhOTA3YzYxM2NlMDBlYWE5YWUzOCIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.H_LhjbrrBxrFa4FEiXXPt4VPn6xDyzvdtiZJ28820uk',
-    },
-};
 const urlParams = new URLSearchParams(window.location.search);
 const movieId = urlParams.get('id');
 var diretores = [];
@@ -50,18 +42,18 @@ search.addEventListener('click', (event) => {
 });
 
 async function main() {
-    var info = await fetch(`https://api.themoviedb.org/3/movie/${movieId}?language=en-US`, options).then((response) => response.json());
+    const [info, img, credits] = await Promise.all([
+        fetch(`${TMDB_API_URL}/movie/${movieId}?language=en-US`, options).then((response) => response.json()),
+        fetch(`${TMDB_API_URL}/movie/${movieId}/images`, options).then((response) => response.json()),
+        fetch(`${TMDB_API_URL}/movie/${movieId}/credits?language=en-US`, options).then((response) => response.json()),
+    ]);
     nome.innerText = info.title;
 
     window.top.document.title = 'Watch ' + info.title;
 
-    var img = await fetch(`https://api.themoviedb.org/3/movie/${movieId}/images`, options).then((response) => response.json());
-
     var foto = img.backdrops[0].file_path;
-    var fotoLink = imgUrl + foto;
+    var fotoLink = DETAIL_IMG_URL + foto;
     bgImg.style.backgroundImage = `-webkit-linear-gradient(bottom, rgba(5, 21, 30, 1) 0%, rgba(0, 0, 0, 0) 30%), url('${fotoLink}')`;
-
-    var credits = await fetch(`https://api.themoviedb.org/3/movie/${movieId}/credits?language=en-US`, options).then((response) => response.json());
 
     for (let i = 0; i < credits.crew.length; i++) {
         if (credits.crew[i].job == 'Director' && diretores.length < 2) {
@@ -101,13 +93,15 @@ async function main() {
             var actor = document.createElement('div');
             actor.classList.add('actor');
 
-            var face = document.createElement('div');
+            var face = document.createElement('img');
             face.classList.add('face');
+            face.loading = 'lazy';
+            face.decoding = 'async';
+            face.alt = e.name;
             if (e.profile_path != null) {
-                var faceImg = imgUrl + e.profile_path;
-                face.style.backgroundImage = `url("${faceImg}")`;
+                face.src = PROFILE_IMG_URL + e.profile_path;
             } else {
-                face.style.backgroundImage = `url("https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcRkmcrd-1DlsghkUmszTsMtJtjTj2avxELvWWjDfbIrqboIQMdL")`;
+                face.src = 'https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcRkmcrd-1DlsghkUmszTsMtJtjTj2avxELvWWjDfbIrqboIQMdL';
                 face.classList.replace('face', 'guest');
             }
 
@@ -127,18 +121,14 @@ async function main() {
         }
     });
 
-    let k = 0;
-    for (let h = 1; h < 6; h++) {
-        similar = await fetch(`https://api.themoviedb.org/3/movie/${movieId}/similar?language=en-US&page=${h}`, options)
-            .then((res) => res.json())
-            .then((data) => {
-                return data.results;
-            });
-        for (let i = 0; i < 20; i++) {
-            similarFull[k + i] = similar[i];
-        }
-        k += 20;
-    }
+    const similarPages = await Promise.all(
+        Array.from({ length: 5 }, (_, index) =>
+            fetch(`${TMDB_API_URL}/movie/${movieId}/similar?language=en-US&page=${index + 1}`, options)
+                .then((res) => res.json())
+                .then((data) => data.results),
+        ),
+    );
+    similarFull = similarPages.flat();
 
     similarFull.sort((a, b) => Number(b.vote_count) - Number(a.vote_count));
 
@@ -156,16 +146,11 @@ async function main() {
         movieEl.classList.add('movie');
         movieEl.classList.add('gradient-border');
         movieEl.id = `${id}`;
-        movieEl.innerHTML = `
-        
-        <div id="img${id}" class="imagem"></div>
-        `;
+        movieEl.innerHTML = createLazyImageMarkup(POSTER_IMG_URL + poster_path, '', 'imagem');
 
         similarMovies.appendChild(movieEl);
 
-        var imgId = document.getElementById(`img${id}`);
-        imgId.style.backgroundImage = `url("${imgUrl + poster_path}")`;
-        imgId.style.backgroundSize = `cover`;
+        var imgId = movieEl.querySelector('.imagem');
         imgId.addEventListener('click', abrirSimilar);
     });
 }
@@ -191,6 +176,6 @@ function abrir() {
 
 function abrirSimilar(event) {
     var similarMovieId = event.target.offsetParent.id;
-    site = 'watchMovies.html?id=' + similarMovieId;
+    site = '/pages/watch-movies.html?id=' + similarMovieId;
     window.location.href = site;
 }
